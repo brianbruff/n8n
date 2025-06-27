@@ -1,0 +1,31 @@
+{
+  "name": "n8n-web-scraper-pdf-sample",
+  "version": "1.0.0",
+  "description": "Sample n8n project for scraping web pages and saving as PDF",
+  "main": "index.js",
+  "scripts": {
+    "start": "n8n start",
+    "dev": "n8n dev",
+    "build": "n8n build",
+    "setup": "./setup.sh",
+    "validate": "node validate-workflows.js",
+    "test": "npm run validate"
+  },
+  "keywords": [
+    "n8n",
+    "workflow",
+    "web-scraping",
+    "pdf",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "n8n": "^1.0.0",
+    "puppeteer": "^21.0.0",
+    "html-pdf": "^3.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}

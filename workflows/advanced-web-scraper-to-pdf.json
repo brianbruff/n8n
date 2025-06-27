@@ -1,0 +1,172 @@
+{
+  "name": "Advanced Web Scraper to PDF Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://documents.roskosch.de/smartsdr-mac/",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "7c0f4f88-8b54-4a1b-9c8e-2f3a4b5c6d7e",
+      "name": "Fetch Web Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        240,
+        300
+      ],
+      "notes": "Fetches the HTML content from the SmartSDR Mac documentation page"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and enhance HTML content for better PDF formatting\nconst response = $input.first().json;\nconst htmlContent = response.body;\nconst headers = response.headers;\n\n// Validate HTML content\nif (!htmlContent || typeof htmlContent !== 'string') {\n  throw new Error('No valid HTML content received from the webpage');\n}\n\n// Extract title from HTML\nconst titleMatch = htmlContent.match(/<title[^>]*>([^<]+)</title>/i);\nconst pageTitle = titleMatch ? titleMatch[1].trim() : 'SmartSDR Mac Documentation';\n\n// Add CSS for better PDF rendering\nconst enhancedHtml = `\n<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n    <title>${pageTitle}</title>\n    <style>\n        body { \n            font-family: Arial, sans-serif; \n            line-height: 1.6; \n            margin: 0; \n            padding: 20px;\n            color: #333;\n        }\n        img { \n            max-width: 100%; \n            height: auto;\n        }\n        pre, code { \n            background-color: #f4f4f4; \n            padding: 2px 4px; \n            border-radius: 3px;\n        }\n        pre {\n            padding: 10px;\n            overflow-x: auto;\n        }\n        table {\n            border-collapse: collapse;\n            width: 100%;\n            margin: 10px 0;\n        }\n        th, td {\n            border: 1px solid #ddd;\n            padding: 8px;\n            text-align: left;\n        }\n        th {\n            background-color: #f2f2f2;\n        }\n        .pdf-header {\n            border-bottom: 2px solid #333;\n            padding-bottom: 10px;\n            margin-bottom: 20px;\n        }\n        .pdf-footer {\n            margin-top: 30px;\n            padding-top: 10px;\n            border-top: 1px solid #ccc;\n            font-size: 12px;\n            color: #666;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"pdf-header\">\n        <h1>${pageTitle}</h1>\n        <p><strong>Source:</strong> https://documents.roskosch.de/smartsdr-mac/</p>\n        <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>\n    </div>\n    ${htmlContent.replace(/<head[^>]*>.*?<\\/head>/is, '').replace(/<\\/body>.*$/is, '').replace(/^.*?<body[^>]*>/is, '')}\n    <div class=\"pdf-footer\">\n        <p>This document was generated automatically from the SmartSDR Mac documentation website.</p>\n    </div>\n</body>\n</html>\n`;\n\n// Return enhanced data\nreturn {\n  html: enhancedHtml,\n  title: pageTitle,\n  originalUrl: 'https://documents.roskosch.de/smartsdr-mac/',\n  timestamp: new Date().toISOString(),\n  contentLength: htmlContent.length,\n  enhancedLength: enhancedHtml.length,\n  responseHeaders: headers\n};"
+      },
+      "id": "2a1b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p",
+      "name": "Enhance HTML for PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ],
+      "notes": "Processes and enhances HTML content with better styling for PDF conversion"
+    },
+    {
+      "parameters": {
+        "htmlProperty": "html",
+        "filename": "={{ $json.title.replace(/[^a-zA-Z0-9]/g, '_') }}_{{ $json.timestamp.split('T')[0] }}.pdf",
+        "pdfOptions": {
+          "format": "A4",
+          "printBackground": true,
+          "marginTop": "0.5in",
+          "marginBottom": "0.5in",
+          "marginLeft": "0.5in",
+          "marginRight": "0.5in"
+        }
+      },
+      "id": "3b2c4d5e-6f7g-8h9i-0j1k-2l3m4n5o6p7q",
+      "name": "Convert to PDF",
+      "type": "htmlToPdf",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ],
+      "notes": "Converts the enhanced HTML content to PDF using the custom HTML to PDF node"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $json.filename }}",
+        "dataPropertyName": "pdf",
+        "encoding": "base64"
+      },
+      "id": "4c3d5e6f-7g8h-9i0j-1k2l-3m4n5o6p7q8r",
+      "name": "Save PDF File",
+      "type": "n8n-nodes-base.fs",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ],
+      "notes": "Saves the generated PDF file to the file system"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate completion summary\nconst data = $input.first().json;\n\nreturn {\n  success: true,\n  message: 'Web scraping and PDF generation completed successfully',\n  details: {\n    sourceUrl: 'https://documents.roskosch.de/smartsdr-mac/',\n    filename: data.filename,\n    fileSize: data.size,\n    timestamp: new Date().toISOString(),\n    process: 'Scraped webpage content and converted to PDF format'\n  }\n};"
+      },
+      "id": "5d4e6f7g-8h9i-0j1k-2l3m-4n5o6p7q8r9s",
+      "name": "Generate Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        300
+      ],
+      "notes": "Generates a summary of the completed scraping and PDF generation process"
+    }
+  ],
+  "connections": {
+    "Fetch Web Page": {
+      "main": [
+        [
+          {
+            "node": "Enhance HTML for PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhance HTML for PDF": {
+      "main": [
+        [
+          {
+            "node": "Convert to PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to PDF": {
+      "main": [
+        [
+          {
+            "node": "Save PDF File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save PDF File": {
+      "main": [
+        [
+          {
+            "node": "Generate Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "advanced-scraper-instance"
+  },
+  "id": "advanced-workflow-001",
+  "tags": [
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "web-scraping",
+      "name": "web-scraping"
+    },
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "pdf-generation",
+      "name": "pdf-generation"
+    },
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "documentation",
+      "name": "documentation"
+    }
+  ]
+}

@@ -1,0 +1,153 @@
+{
+  "name": "Web Scraper to PDF Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://documents.roskosch.de/smartsdr-mac/",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          }
+        }
+      },
+      "id": "7c0f4f88-8b54-4a1b-9c8e-2f3a4b5c6d7e",
+      "name": "Fetch Web Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        240,
+        300
+      ],
+      "notes": "Fetches the HTML content from the target webpage"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and clean HTML content from the HTTP response\nconst htmlContent = $input.first().json.body;\n\n// Basic HTML content validation\nif (!htmlContent || typeof htmlContent !== 'string') {\n  throw new Error('No valid HTML content received from the webpage');\n}\n\n// Optional: Clean up the HTML content\n// Remove script tags and other non-essential elements for PDF\nconst cleanedHtml = htmlContent\n  .replace(/<script[^>]*>.*?<\\/script>/gis, '')\n  .replace(/<style[^>]*>.*?<\\/style>/gis, '')\n  .replace(/<!--.*?-->/gs, '');\n\n// Return the cleaned HTML content\nreturn {\n  html: cleanedHtml,\n  originalUrl: 'https://documents.roskosch.de/smartsdr-mac/',\n  timestamp: new Date().toISOString(),\n  title: cleanedHtml.match(/<title[^>]*>([^<]+)</title>/i)?.[1] || 'Scraped Content'\n};"
+      },
+      "id": "2a1b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p",
+      "name": "Process HTML Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ],
+      "notes": "Processes and cleans the HTML content for PDF conversion"
+    },
+    {
+      "parameters": {
+        "jsCode": "// HTML to PDF conversion using puppeteer-like approach\n// Note: This is a simplified example. In a real n8n environment,\n// you would need a custom node or external service for PDF generation\n\nconst htmlContent = $input.first().json.html;\nconst title = $input.first().json.title;\nconst timestamp = $input.first().json.timestamp;\n\n// Create a filename based on title and timestamp\nconst filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;\n\n// For demonstration purposes, we'll create a mock PDF metadata\n// In a real implementation, this would call a PDF generation service\nconst pdfMetadata = {\n  filename: filename,\n  title: title,\n  content_length: htmlContent.length,\n  generated_at: timestamp,\n  source_url: 'https://documents.roskosch.de/smartsdr-mac/',\n  status: 'ready_for_conversion',\n  html_preview: htmlContent.substring(0, 500) + '...'\n};\n\nreturn pdfMetadata;"
+      },
+      "id": "3b2c4d5e-6f7g-8h9i-0j1k-2l3m4n5o6p7q",
+      "name": "Generate PDF Metadata",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ],
+      "notes": "Prepares metadata for PDF generation and creates filename"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "write",
+        "fileName": "={{ $json.filename }}",
+        "dataPropertyName": "html_preview",
+        "options": {}
+      },
+      "id": "4c3d5e6f-7g8h-9i0j-1k2l-3m4n5o6p7q8r",
+      "name": "Save HTML Preview",
+      "type": "n8n-nodes-base.fs",
+      "typeVersion": 1,
+      "position": [
+        900,
+        200
+      ],
+      "notes": "Saves HTML content preview to file system"
+    },
+    {
+      "parameters": {
+        "subject": "Web Scraping Complete - PDF Ready",
+        "message": "The webpage {{ $('Fetch Web Page').item.json.url }} has been successfully scraped.\\n\\nContent Title: {{ $json.title }}\\nGenerated at: {{ $json.generated_at }}\\nContent Length: {{ $json.content_length }} characters\\nProposed Filename: {{ $json.filename }}\\n\\nThe HTML content is ready for PDF conversion.\\n\\nHTML Preview:\\n{{ $json.html_preview }}",
+        "options": {}
+      },
+      "id": "5d4e6f7g-8h9i-0j1k-2l3m-4n5o6p7q8r9s",
+      "name": "Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        900,
+        400
+      ],
+      "notes": "Sends notification when scraping is complete (configure email settings as needed)"
+    }
+  ],
+  "connections": {
+    "Fetch Web Page": {
+      "main": [
+        [
+          {
+            "node": "Process HTML Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process HTML Content": {
+      "main": [
+        [
+          {
+            "node": "Generate PDF Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate PDF Metadata": {
+      "main": [
+        [
+          {
+            "node": "Save HTML Preview",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "sample-instance"
+  },
+  "id": "sample-workflow-001",
+  "tags": [
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "web-scraping",
+      "name": "web-scraping"
+    },
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "pdf-generation",
+      "name": "pdf-generation"
+    }
+  ]
+}
