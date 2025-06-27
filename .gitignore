@@ -1,0 +1,28 @@
+# Build artifacts
+dist/
+node_modules/
+*.log
+
+# n8n specific
+.n8n/
+n8n-data/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Generated PDFs (optional - remove if you want to track generated files)
+*.pdf
+
+# Environment files
+.env
+.env.local
